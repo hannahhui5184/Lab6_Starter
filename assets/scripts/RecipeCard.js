@@ -3,6 +3,8 @@ class RecipeCard extends HTMLElement {
     // Part 1 Expose - TODO
 
     // You'll want to attach the shadow DOM here
+    super();
+    let shadow = this.attachShadow({mode: 'open'});
   }
 
   set data(data) {
@@ -100,9 +102,146 @@ class RecipeCard extends HTMLElement {
     // created in the constructor()
 
     // Part 1 Expose - TODO
+    console.log(data);
+    const imgElem = document.createElement('img');
+    imgElem.setAttribute('src', getImgSrc(data));
+    imgElem.setAttribute('alt', getTitle(data));
+
+    const titleElem = document.createElement('p');
+    titleElem.setAttribute('class', 'title');
+    const titleRef = document.createElement('a');
+    titleRef.setAttribute('href', getUrl(data));
+    titleRef.textContent = getTitle(data);
+    titleElem.appendChild(titleRef);
+
+    const orgElem = document.createElement('p');
+    orgElem.setAttribute('class', 'organization');
+    orgElem.textContent = getOrganization(data);
+
+    const divElem = document.createElement('div');
+    divElem.setAttribute('class', 'rating');
+    const spanElem = document.createElement('span');
+
+    // if has rating
+    if (getRatingAvg(data) != null){
+      spanElem.textContent = getRatingAvg(data);
+      const imgRating = document.createElement('img');
+      if (getRatingAvg(data) >= 4.5) {
+        imgRating.setAttribute('src', 'assets/images/icons/5-star.svg');
+        imgRating.setAttribute('alt', '5 stars');
+      }
+      else if(getRatingAvg(data) >= 3.5) {
+        imgRating.setAttribute('src', 'assets/images/icons/4-star.svg');
+        imgRating.setAttribute('alt', '4 stars');
+      }
+      else if(getRatingAvg(data) >= 2.5) {
+        imgRating.setAttribute('src', 'assets/images/icons/3-star.svg');
+        imgRating.setAttribute('alt', '3 stars');
+      }
+      else if(getRatingAvg(data) >= 1.5) {
+        imgRating.setAttribute('src', 'assets/images/icons/2-star.svg');
+        imgRating.setAttribute('alt', '2 stars');
+      }
+      else if(getRatingAvg(data) >= 0.5) {
+        imgRating.setAttribute('src', 'assets/images/icons/1-star.svg');
+        imgRating.setAttribute('alt', '1 stars');
+      }
+      else {
+        imgRating.setAttribute('src', 'assets/images/icons/0-star.svg');
+        imgRating.setAttribute('alt', '0 stars');
+      }
+  
+      const reviewSpan = document.createElement('span');
+      reviewSpan.textContent = '(' + getRatingNum(data) + ')';
+      
+      divElem.appendChild(spanElem);
+      divElem.appendChild(imgRating);
+      divElem.appendChild(reviewSpan);
+    }
+    else {
+      // if has no rating
+      spanElem.textContent = 'No Reviews';
+      divElem.appendChild(spanElem);
+    }
+
+    const timeElem = document.createElement('time');
+    timeElem.textContent = getTime(data);
+
+    const ingredElem = document.createElement('p');
+    ingredElem.setAttribute('class', 'ingredients');
+    ingredElem.textContent = getIngredients(data);
+
+    this.shadowRoot.appendChild(card);
+    this.shadowRoot.appendChild(styleElem);
+
+    card.appendChild(imgElem);
+    card.appendChild(titleElem);
+    card.appendChild(orgElem);
+    card.appendChild(divElem);
+    card.appendChild(timeElem);
+    card.appendChild(ingredElem);
   }
 }
 
+
+function getImgSrc(data) {
+  console.log(data);
+  if (data.image && data.image.url) return data.image.url;
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'ImageObject') return data['@graph'][i]['url'];
+    }
+  };
+  return null;
+}
+
+function getTitle(data) {
+  if (data.headline) return data.headline;
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'Article') return data['@graph'][i]['headline'];
+    }
+  };
+  return null;
+}
+
+function getRatingAvg(data) {
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'Recipe') return data['@graph'][i]['aggregateRating']['ratingValue'];
+    }
+  };
+  return null;
+}
+
+function getRatingNum(data) {
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'Recipe') return data['@graph'][i]['aggregateRating']['ratingCount'];
+    }
+  };
+  return null;
+}
+
+function getTime(data) {
+  if (data.totalTime) return convertTime(data.totalTime);
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'Recipe') return convertTime(data['@graph'][i]['totalTime']);
+    }
+  };
+  return null;
+}
+
+function getIngredients(data) {
+  if (data.recipeIngredient) return createIngredientList(data.recipeIngredient);
+  if (data['@graph']) {
+    for (let i = 0; i < data['@graph'].length; i++) {
+      if (data['@graph'][i]['@type'] == 'Recipe') return createIngredientList(data['@graph'][i]['recipeIngredient']);
+    }
+  };
+  return null;
+}
 
 /*********************************************************************/
 /***                       Helper Functions:                       ***/
